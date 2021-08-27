@@ -5,12 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch via npm",
+            "name": "Launch via NPM",
             "type": "node",
-            "request": "attach",
-            "cwd": "${workspaceFolder}/src",
-            "processId": "${command:PickProcess}",
-            
+            "request": "launch",
+            "cwd": "${workspaceRoot}",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": [
+                "start"
+            ],
+            "port": 3000
         }
     ]
 }
