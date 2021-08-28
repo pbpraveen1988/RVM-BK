@@ -5,6 +5,23 @@ import { HttpException, HttpStatus } from '@nestjs/common';
 
 export class QueryBuilder {
 
+    public static async getRecord(object: string, recordId: string) {
+        if (object && recordId) {
+            const queryString = `Select * from ${object} where id = '${recordId}' `;
+        } else {
+            throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public static async deleteRecord(object: string, recordId: string) {
+        if (object && recordId) {
+            const queryString = `DELETE from ${object} where id = '${recordId}' `;
+        } else {
+            throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+        }
+    }
+
+
     public static async updateRecord(object: string, recordId: string, request: Record) {
         if (object && recordId && request) {
             let columns = ' ';
@@ -27,7 +44,9 @@ export class QueryBuilder {
             })
 
             const queryString = `INSERT INTO ${object} (${columns.slice(0, -1)}) VALUES (${values.slice(0, -1)})`;
-            return await Utils.executeQuery(queryString);
+            const savedRecord: Record = await Utils.executeQuery(queryString);
+            return await Utils.executeQuery(`SELECT * from ${object} where id = ${savedRecord.insertId}`)
+
         } else {
             throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
         }

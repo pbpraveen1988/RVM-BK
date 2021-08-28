@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import { DataService } from '../services';
 import { QueryParams, Record } from '../model';
 
@@ -12,6 +12,15 @@ export class DataController {
     return await this.dataService.getList(params.object, query);
   }
 
+  @Get(':object/:recordId')
+  async getRecord(@Param() params) {
+    return await this.dataService.getRecord(params.object, params.recordId);
+  }
+
+  @Delete(':object/:recordId')
+  async deleteRecord(@Param() params) {
+    return await this.dataService.deleteRecord(params.object, params.recordId)
+  }
 
   @Post(':object')
   async saveRecord(@Param() params, @Body() request: Record): Promise<any> {
