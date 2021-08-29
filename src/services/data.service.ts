@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueryBuilder } from '../utils/QueryBuilder';
 import { QueryParams, Record } from '../model';
-import { Z_DATA_ERROR } from 'zlib';
 
 @Injectable()
 export class DataService {
