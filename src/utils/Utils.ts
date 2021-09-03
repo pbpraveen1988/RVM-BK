@@ -13,6 +13,8 @@ export class Utils {
                     throw new HttpException('Bad Request, Object Not Found', HttpStatus.BAD_REQUEST);
                 } else if (error.code == 'ER_BAD_FIELD_ERROR') {
                     throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+                } else if (error.code == 'ER_DUP_ENTRY') {
+                    throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
                 }
             })
     }

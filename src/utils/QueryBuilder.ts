@@ -78,12 +78,15 @@ export class QueryBuilder {
 
     public static Select = async (tableName: string, queryParams?: QueryParams): Promise<Object> => {
         let queryString = '';
+        let page_number = queryParams.page_number || 1;
+        let page_size = queryParams.page_size || 50;
         if (queryParams && queryParams.select) {
             const _fields = queryParams.select === 'all' ? '*' : queryParams.select;
             queryString = `Select ${_fields} from ${tableName} `;
         } else {
             queryString = `Select id,name from ${tableName} `;
         }
+
         if (queryParams && queryParams.where) {
             queryString += QueryBuilder.createWhereStatement(queryParams.where);
         }
