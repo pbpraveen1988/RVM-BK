@@ -14,7 +14,7 @@ export class Utils {
                 } else if (error.code == 'ER_BAD_FIELD_ERROR') {
                     throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
                 } else if (error.code == 'ER_DUP_ENTRY') {
-                    throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+                    throw new HttpException(error.message, HttpStatus.CONFLICT);
                 }
             })
     }
