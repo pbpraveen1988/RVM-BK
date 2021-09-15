@@ -6,6 +6,7 @@ export class Utils {
     public static async executeQuery<T>(queryString: string): Promise<T> {
         return await getConnection().query(queryString)
             .then((response: any) => {
+                console.log(response);
                 return this.newResolvedPromise(response);
             }).catch(error => {
                 console.error(error);

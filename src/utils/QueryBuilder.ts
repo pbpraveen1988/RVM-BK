@@ -8,6 +8,12 @@ export class QueryBuilder {
     public static async getRecord(object: string, recordId: string) {
         if (object && recordId) {
             const queryString = `Select * from ${object} where id = '${recordId}' `;
+            const _data = await Utils.executeQuery(queryString);
+            if (_data) {
+                return _data[0];
+            } else {
+                return {}
+            }
         } else {
             throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
         }
@@ -32,6 +38,18 @@ export class QueryBuilder {
             return await Utils.executeQuery(queryString);
         } else {
             throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    public static async bulkInsert(object: string, request: Record[]) {
+        if (request && object) {
+            request.forEach(async x => {
+                try {
+                    await QueryBuilder.saveRecord(object, x);
+                } catch (ex) {
+
+                }
+            })
         }
     }
 
