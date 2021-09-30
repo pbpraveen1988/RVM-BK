@@ -16,6 +16,10 @@ export class Utils {
                     throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
                 } else if (error.code == 'ER_DUP_ENTRY') {
                     throw new HttpException(error.message, HttpStatus.CONFLICT);
+                } else if (error.code == 'ER_WRONG_VALUE') {
+                    throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+                } else {
+                    throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR);
                 }
             })
     }
