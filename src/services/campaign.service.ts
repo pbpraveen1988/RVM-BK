@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Utils } from 'src/utils';
 import { QueryBuilder } from '../utils/QueryBuilder';
+import { Cron } from '@nestjs/schedule';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
@@ -44,5 +45,11 @@ export class CampaignService {
             }).on('end', () => {
                 console.log('end event');
             })
+    }
+
+
+    @Cron('* * * * * *')
+    async handleCampaignCron() {
+        console.log('CRON DATE', new Date());
     }
 }

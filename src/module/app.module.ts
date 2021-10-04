@@ -4,10 +4,13 @@ import { AppService, DataService, UserService, AttachmentService, CampaignServic
 import { LoggerMiddleware } from '../middleware';
 import { DatabaseModule } from './database.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+import { ScheduleModule } from '@nestjs/schedule';
+
 
 @Module({
-  imports: [DatabaseModule,
+  imports: [
+    ScheduleModule.forRoot(),
+    DatabaseModule,
     ServeStaticModule.forRoot({
       rootPath: '/src/public',
     })
