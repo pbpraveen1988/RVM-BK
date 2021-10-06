@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Utils } from 'src/utils';
 import { QueryBuilder } from '../utils/QueryBuilder';
-import { Cron } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
@@ -48,8 +48,20 @@ export class CampaignService {
     }
 
 
-    @Cron('* * * * * *')
+    @Cron('* * * * *')
     async handleCampaignCron() {
         console.log('CRON DATE', new Date());
+
+        const queryString = 'Select * from campaign where status = 1 AND isCalling = 0';
+        const _data: Array<any> = await Utils.executeQuery(queryString);
+        _data && _data.forEach(data => {
+            if (new Date(data.start_date) <= new Date() || new Date(data.end_date) >= new Date()) {
+                console.log("inside loop.")
+                
+
+
+            }
+        });
+
     }
 }
