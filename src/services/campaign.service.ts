@@ -5,9 +5,13 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
+const got = require('got');
 
 @Injectable()
 export class CampaignService {
+
+    private static Carrier: string;
+
     async getHistory(id: any) {
         const queryString = 'Select * from callhistory where campaignId = ' + id;
         const campaignData = await QueryBuilder.getRecord('campaign', id);
@@ -51,17 +55,50 @@ export class CampaignService {
     @Cron('* * * * *')
     async handleCampaignCron() {
         console.log('CRON DATE', new Date());
-
-        const queryString = 'Select * from campaign where status = 1 AND isCalling = 0';
-        const _data: Array<any> = await Utils.executeQuery(queryString);
-        _data && _data.forEach(data => {
-            if (new Date(data.start_date) <= new Date() || new Date(data.end_date) >= new Date()) {
-                console.log("inside loop.")
-                
-
-
+        const queryString = `SELECT c.id,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename
+        FROM campaign c
+        INNER JOIN csvfile csv ON c.csvfile_id = csv.id
+        INNER JOIN audio a ON a.id = c.audio_id
+        WHERE c.status = 1 AND c.isCalling = 0`;
+        const campaignList: Array<any> = await Utils.executeQuery(queryString);
+        campaignList && campaignList.forEach(campaign => {
+            try {
+                if (new Date(campaign.start_date) <= new Date() || new Date(campaign.end_date) >= new Date()) {
+                    let counter = 0;
+                    let numbers = [];
+                    fs.createReadStream('src/public/' + campaign.filename)
+                        .pipe(csv())
+                        .on('data', data => {
+                            if (counter++ >= campaign.lastIndex && counter <= campaign.lastIndex + campaign.intervalMinute) {
+                                numbers.push(data);
+                            }
+                        })
+                        .on('end', async () => {
+                            const _numberWithCarriers = [];
+                            const linesArray = [];
+                            const dblines = await Utils.getLines();
+                            const _inuse = [];
+                            for (const number of numbers) {
+                                const _carrier: string = await Utils.getCarrier(number) as string;
+                                dblines && dblines.forEach(element => {
+                                    if (_inuse.findIndex(x => x.phone == element.phone) == -1) {
+                                        _inuse.push({ id: element.id, phone: element.phone });
+                                        _numberWithCarriers.push({
+                                            carrier: _carrier,
+                                            phone: element.phone,
+                                            xref: element.xref,
+                                            number: number
+                                        });
+                                    }
+                                });
+                            }
+                            const query = `UPDATE xreflines SET inUse = 1 WHERE id IN (${_inuse.map(x => x.id).join(',')})`
+                            await Utils.executeQuery(query);
+                        })
+                }
+            } catch (ex) {
+                console.error('Exception => ', ex.message);
             }
         });
-
     }
 }

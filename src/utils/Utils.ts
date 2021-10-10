@@ -1,5 +1,7 @@
 import { getConnection } from "typeorm";
 import { HttpException, HttpStatus } from "@nestjs/common";
+import { Constants } from './constants';
+import { Record } from "src/model";
 
 export class Utils {
 
@@ -30,6 +32,59 @@ export class Utils {
 
     public static newRejectPromise<T>(value: T): Promise<T> {
         return new Promise((resolve, reject) => reject(value));
+    }
+
+    /**
+     * 
+     * @param phone_number 
+     * @returns Will return the carrier of the phone number.
+     */
+    // NOTE :  Later we will make api call or DB call to get the carrier
+    public static async getCarrier(phone_number: string | number) {
+        return new Promise((resolve, reject) => resolve('VERIZON'));
+    }
+
+    public static async getLines(carrier?: string) {
+        let sqlQuery = 'SELECT * FROM xreflines where inUse = 0 ';
+        if (carrier) {
+            sqlQuery += ' AND carrier = ' + carrier;
+        }
+        const campaignList: Array<any> = await Utils.executeQuery(sqlQuery);
+        if (campaignList && campaignList.length) {
+            return campaignList;
+        }
+        return;
+    }
+
+    public static makeRequestForAsterisk(campaign: Record, numbersArray: [{ number: string, carrier: string }], carrier: string, lines: { xref: string, phone: string }) {
+
+        const _record: Record = new Record();
+        _record["vm numbers"] = numbersArray;
+        _record["mobile carrier"] = carrier;
+        _record["telco carrier"] = "telnyx";
+        _record["audio uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
+
+
+
+        switch (carrier) {
+            case 'VERIZON':
+                _record["mailbox password"] = "7079"; break;
+            case 'T-MOBILE':
+                _record["mailbox password"] = "7079"; break;
+            case 'CINGULAR':
+                _record["mailbox password"] = "7079"; break;
+        }
+
+        return _record;
+
+        return {
+            "gateway access number": "4434656245",
+            "mailbox number": "9177081512",
+
+            "telco caller id": "8022327003",
+
+
+        }
     }
 
 }
