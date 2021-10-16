@@ -63,7 +63,7 @@ export class CampaignService {
         const campaignList: Array<any> = await Utils.executeQuery(queryString);
         campaignList && campaignList.forEach(campaign => {
             try {
-                if (new Date(campaign.start_date) <= new Date() || new Date(campaign.end_date) >= new Date()) {
+                if (new Date(campaign.start_date) <= new Date() || new Date(campaign.end_date) <= new Date()) {
                     let counter = 0;
                     let numbers = [];
                     fs.createReadStream('src/public/' + campaign.filename)
@@ -74,26 +74,32 @@ export class CampaignService {
                             }
                         })
                         .on('end', async () => {
-                            const _numberWithCarriers = [];
-                            const linesArray = [];
-                            const dblines = await Utils.getLines();
-                            const _inuse = [];
-                            for (const number of numbers) {
-                                const _carrier: string = await Utils.getCarrier(number) as string;
-                                dblines && dblines.forEach(element => {
-                                    if (_inuse.findIndex(x => x.phone == element.phone) == -1) {
-                                        _inuse.push({ id: element.id, phone: element.phone });
-                                        _numberWithCarriers.push({
-                                            carrier: _carrier,
-                                            phone: element.phone,
-                                            xref: element.xref,
-                                            number: number
-                                        });
-                                    }
-                                });
+                            if (numbers.length) {
+                                const _numberWithCarriers = [];
+                                const linesArray = [];
+                                const dblines = await Utils.getLines();
+                                const _inuse = [];
+                                for (const number of numbers) {
+                                    const _carrier: string = await Utils.getCarrier(number) as string;
+                                    dblines && dblines.forEach(element => {
+                                        if (_inuse.findIndex(x => x.phone == element.phone) == -1) {
+                                            _inuse.push({ id: element.id, phone: element.phone });
+                                            _numberWithCarriers.push({
+                                                carrier: _carrier,
+                                                phone: element.phone,
+                                                xref: element.xref,
+                                                number: number
+                                            });
+                                        }
+                                    });
+                                }
+                                const query = `UPDATE xreflines SET inUse = 1 WHERE id IN (${_inuse.map(x => x.id).join(',')})`
+                                await Utils.executeQuery(query);
+                                const _verizonNumbers = _numberWithCarriers.filter(x => x.carrier == 'VERIZON');
+                                const _tmobile = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE');
+                                const _attCingular = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR');
+                                
                             }
-                            const query = `UPDATE xreflines SET inUse = 1 WHERE id IN (${_inuse.map(x => x.id).join(',')})`
-                            await Utils.executeQuery(query);
                         })
                 }
             } catch (ex) {

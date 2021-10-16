@@ -56,16 +56,15 @@ export class Utils {
         return;
     }
 
-    public static makeRequestForAsterisk(campaign: Record, numbersArray: [{ number: string, carrier: string }], carrier: string, lines: { xref: string, phone: string }) {
-
+    public static makeRequestForAsterisk(campaign: Record, numbersArray: [{ number: string }], carrier: string, lines: { xref: string, phone: string }) {
         const _record: Record = new Record();
         _record["vm numbers"] = numbersArray;
         _record["mobile carrier"] = carrier;
         _record["telco carrier"] = "telnyx";
         _record["audio uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
-
-
-
+        _record["mailbox number"] = lines.phone;
+        _record["gateway access number"] = lines.xref;
+        _record["telco caller id"] = lines.phone;
         switch (carrier) {
             case 'VERIZON':
                 _record["mailbox password"] = "7079"; break;
@@ -74,17 +73,7 @@ export class Utils {
             case 'CINGULAR':
                 _record["mailbox password"] = "7079"; break;
         }
-
         return _record;
-
-        return {
-            "gateway access number": "4434656245",
-            "mailbox number": "9177081512",
-
-            "telco caller id": "8022327003",
-
-
-        }
     }
 
 }
