@@ -2,6 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { Utils } from 'src/utils';
 import { QueryBuilder } from '../utils/QueryBuilder';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import axios from 'axios';
+import { Record } from '../model';
+import { Constants } from '../utils/constants';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
@@ -75,30 +78,42 @@ export class CampaignService {
                         })
                         .on('end', async () => {
                             if (numbers.length) {
-                                const _numberWithCarriers = [];
-                                const linesArray = [];
-                                const dblines = await Utils.getLines();
-                                const _inuse = [];
+                                const _numberWithCarriers: Record[] = [];
                                 for (const number of numbers) {
                                     const _carrier: string = await Utils.getCarrier(number) as string;
-                                    dblines && dblines.forEach(element => {
-                                        if (_inuse.findIndex(x => x.phone == element.phone) == -1) {
-                                            _inuse.push({ id: element.id, phone: element.phone });
-                                            _numberWithCarriers.push({
-                                                carrier: _carrier,
-                                                phone: element.phone,
-                                                xref: element.xref,
-                                                number: number
-                                            });
-                                        }
-                                    });
+                                    _numberWithCarriers.push({
+                                        carrier: _carrier,
+                                        number: number
+                                    })
                                 }
-                                const query = `UPDATE xreflines SET inUse = 1 WHERE id IN (${_inuse.map(x => x.id).join(',')})`
-                                await Utils.executeQuery(query);
-                                const _verizonNumbers = _numberWithCarriers.filter(x => x.carrier == 'VERIZON');
-                                const _tmobile = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE');
-                                const _attCingular = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR');
-                                
+                                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => y.number);
+                                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => y.number);
+                                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => y.number);
+
+                                // Create DROP request for VERIZON carrier 
+                                const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
+                                // Create DROP request for T-MOBILE carrier
+                                const _tmobileRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'T-MOBILE');
+                                // Create DROP request for CINGULAR carrier
+                                const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
+
+                                await Promise.all([
+                                    axios.post(Constants.AsteriskUrl, _verizonRequest),
+                                    axios.post(Constants.AsteriskUrl, _tmobileRequest),
+                                    axios.post(Constants.AsteriskUrl, _attRequest),
+                                ]).then(async response => {
+                                    const isCallCompleted = campaign.lastIndex + campaign.intervalMinute > counter ? true : false;
+                                    await QueryBuilder.updateRecord('campaign', campaign.id, {
+                                        totalCount: counter,
+                                        lastIndex: isCallCompleted ? 0 : campaign.lastIndex + campaign.intervalMinute,
+                                        isCalling: false,
+                                        campaignStatus: !isCallCompleted,
+                                    })
+
+                                }).catch(exception => {
+                                    console.error(exception);
+                                })
+
                             }
                         })
                 }
