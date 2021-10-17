@@ -78,6 +78,7 @@ export class CampaignService {
                         })
                         .on('end', async () => {
                             if (numbers.length) {
+                                await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: true })
                                 const _numberWithCarriers: Record[] = [];
                                 for (const number of numbers) {
                                     const _carrier: string = await Utils.getCarrier(number) as string;
@@ -89,7 +90,6 @@ export class CampaignService {
                                 const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => y.number);
                                 const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => y.number);
                                 const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => y.number);
-
                                 // Create DROP request for VERIZON carrier 
                                 const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
                                 // Create DROP request for T-MOBILE carrier
@@ -113,7 +113,6 @@ export class CampaignService {
                                 }).catch(exception => {
                                     console.error(exception);
                                 })
-
                             }
                         })
                 }
