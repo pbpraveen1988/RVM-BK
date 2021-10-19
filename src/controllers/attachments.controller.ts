@@ -5,11 +5,9 @@ import { Express } from 'express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { createReadStream } from 'fs';
-import { Utils } from '../utils';
+import { API_TCPA_SCRUB_BULK, TCPA_USERNAME, TCPA_SECRET} from '../utils';
 const axios = require('axios');
-const API_TCPA_SCRUB_BULK = 'https://api.tcpalitigatorlist.com/scrub/phones';
-const TCPA_USERNAME = 'tcpa_PpTkL5xMr4';
-const TCPA_SECRET = 'ysBE rcAi ZuD0 vWwn nb8w Wl91';
+
 
 @Controller('attachment/v1.0')
 export class AttachmentController {
@@ -34,7 +32,10 @@ export class AttachmentController {
     @Post('mass/scrub/phones')
     async scrubPhones(@Param() params): Promise<any> {
       console.log(params);
-      const res = await axios.post(API_TCPA_SCRUB_BULK, params, {
+      const formData = new FormData();
+      formData.append('phones', params.phones);
+      formData.append('type', params.type);
+      const res = await axios.post(API_TCPA_SCRUB_BULK, formData, {
         auth: {
           username: TCPA_USERNAME,
           password: TCPA_SECRET
