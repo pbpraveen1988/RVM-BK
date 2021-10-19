@@ -5,10 +5,9 @@ import { Express } from 'express';
 import { diskStorage } from 'multer';
 import { extname, join } from 'path';
 import { createReadStream } from 'fs';
+import { Record } from '../model';
 import { API_TCPA_SCRUB_BULK, TCPA_USERNAME, TCPA_SECRET} from '../utils';
 const axios = require('axios');
-
-
 @Controller('attachment/v1.0')
 export class AttachmentController {
     constructor(private readonly attachmentService: AttachmentService) { }
@@ -30,18 +29,17 @@ export class AttachmentController {
     }
 
     @Post('mass/scrub/phones')
-    async scrubPhones(@Param() params): Promise<any> {
-      console.log(params);
-      const formData = new FormData();
-      formData.append('phones', params.phones);
-      formData.append('type', params.type);
-      const res = await axios.post(API_TCPA_SCRUB_BULK, formData, {
+    async scrubPhones(@Body() request: Record): Promise<any> {
+      const apiUrl = `${API_TCPA_SCRUB_BULK}?phones=[${request.phones}]&type=[${request.type}]`;
+      console.log(apiUrl);
+      const res = await axios.post(apiUrl, {}, {
         auth: {
           username: TCPA_USERNAME,
           password: TCPA_SECRET
         }
       })
-      return res;
+
+      return res.data;
     }
 
     @Get('download/:fileId')
