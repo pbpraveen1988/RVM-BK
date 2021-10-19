@@ -31,6 +31,7 @@
     "csv-parser": "^3.0.0",
     "faktory-worker": "^4.2.1",
     "got": "^11.8.2",
+    "json-2-csv": "^3.14.4",
     "mysql": "^2.18.1",
     "pg": "^7.18.2",
     "postgres": "^1.0.2",

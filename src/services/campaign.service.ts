@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Utils } from 'src/utils';
+import { Utils, API_TCPA_SCRUB_STATUS, TCPA_USERNAME, TCPA_SECRET} from '../utils';
 import { QueryBuilder } from '../utils/QueryBuilder';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
@@ -9,6 +9,8 @@ const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
 const faktory = require("faktory-worker");
+const got = require('got');
+const converter = require('json-2-csv');
 
 @Injectable()
 export class CampaignService {
@@ -54,10 +56,70 @@ export class CampaignService {
             })
     }
 
+    @Cron(CronExpression.EVERY_MINUTE)
+    async handleInQueueCSVCron() {
+      console.log('handleInQueueCSVCron: CRON DATE', new Date());
+      const sql = `select id,tcpaJobKey,filename from csvfile where tcpaStatus='in_queue'`;
+      const queueCsvList: Array<any> = await Utils.executeQuery(sql);
+      queueCsvList && queueCsvList.forEach(async csvfile => {
+        try {
+          const scrubFormData = new FormData();
+          scrubFormData.append('key', csvfile.key);
+          const res = await axios.post(API_TCPA_SCRUB_STATUS, scrubFormData, {
+            auth: {
+              username: TCPA_USERNAME,
+              password: TCPA_SECRET
+            }
+          })
+          if(res) {
+            const data: any = res.data; 
+            let tcpaRecords = [];
+            let dncRecords = [];
+            let cleanRecords = [];
+            if(data.match) {
+              const item = data.match;
+              for ( let key in item ) {
+                if(item[key].status === 'TCPA') {
+                  tcpaRecords.push(key, item[key]);
+                }
+                if(item[key].status === 'DNC_COMPLAINERS') {
+                  dncRecords.push(key, item[key]);
+                }
+              }
+            }
+            if(data.clean) {
+              const item = data.clean;
+              for ( let key in item ) {
+                cleanRecords.push(key, item[key].phone_number);
+              }
+
+              // convert JSON array to CSV string
+              converter.json2csv(cleanRecords, async (err, csv) => {
+                if (err) {
+                    throw err;
+                }
+                // print CSV string
+                console.log(csv);
+
+                // write CSV to a file
+                fs.writeFileSync('src/public/' + csvfile.filename, csv);
+                
+                await QueryBuilder.updateRecord('csvfile', csvfile.id, {
+                  status: 'active'
+                })
+                
+              });
+            }
+          }
+        } catch (ex) {
+          console.error('handleInQueueCSVCron:Exception => ', ex.message);
+        }
+      });
+    }
 
     @Cron('* * * * *')
     async handleCampaignCron() {
-        console.log('CRON DATE', new Date());
+        console.log('handleCampaignCron: CRON DATE', new Date());
         const queryString = `SELECT c.id,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename
         FROM campaign c
         INNER JOIN csvfile csv ON c.csvfile_id = csv.id

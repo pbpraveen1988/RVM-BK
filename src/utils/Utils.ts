@@ -3,6 +3,11 @@ import { HttpException, HttpStatus } from "@nestjs/common";
 import { Constants } from './constants';
 import { Record } from "../model";
 
+export const API_TCPA_SCRUB_BULK = 'https://api.tcpalitigatorlist.com/scrub/phones';
+export const  API_TCPA_SCRUB_STATUS = 'https://api.tcpalitigatorlist.com/scrub/phones/get';
+export const TCPA_USERNAME = 'tcpa_BKjMrl8NgZ';
+export const TCPA_SECRET = 'AK6g aNnK ivXC nqAn aAhl TFvv';
+
 export class Utils {
 
     public static async executeQuery<T>(queryString: string): Promise<T> {
