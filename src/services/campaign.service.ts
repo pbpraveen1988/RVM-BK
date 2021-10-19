@@ -8,7 +8,7 @@ import { Constants } from '../utils/constants';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
-const got = require('got');
+const faktory = require("faktory-worker");
 
 @Injectable()
 export class CampaignService {
@@ -64,6 +64,20 @@ export class CampaignService {
         INNER JOIN audio a ON a.id = c.audio_id
         WHERE c.status = 1 AND c.isCalling = 0`;
         const campaignList: Array<any> = await Utils.executeQuery(queryString);
+        try {
+            console.log("================INside TRY BLOCK============");
+            const client = await faktory.connect({
+                host: 'tcp://:8ab081c0bfdc2175@3.145.3.203',
+                port: 7419
+            });
+            await client.job("OriginateCallJob", { carrier: "verizon", audio_uri: "https://some.domain.com/some/path/to/file.wav", vm_numbers: [{ number: "6156678565" }, { number: "8304463687" }] }).push();
+            await client.close(); // reuse client if possible! remember to disconnect!
+            console.log("==========INSIDE BLOCK COMPLETED==============");
+        } catch (ex) {
+            console.log("INSIDE EXCEPTION");
+            console.error(ex);
+        }
+
         campaignList && campaignList.forEach(campaign => {
             try {
                 if (new Date(campaign.start_date) <= new Date() || new Date(campaign.end_date) <= new Date()) {
@@ -87,9 +101,9 @@ export class CampaignService {
                                         number: number
                                     })
                                 }
-                                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => y.number);
-                                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => y.number);
-                                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => y.number);
+                                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => { return { number: y.number } });
+                                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => { return { number: y.number } });
+                                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => { return { number: y.number } });
                                 // Create DROP request for VERIZON carrier 
                                 const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
                                 // Create DROP request for T-MOBILE carrier
@@ -97,22 +111,34 @@ export class CampaignService {
                                 // Create DROP request for CINGULAR carrier
                                 const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
 
-                                await Promise.all([
-                                    axios.post(Constants.AsteriskUrl, _verizonRequest),
-                                    axios.post(Constants.AsteriskUrl, _tmobileRequest),
-                                    axios.post(Constants.AsteriskUrl, _attRequest),
-                                ]).then(async response => {
-                                    const isCallCompleted = campaign.lastIndex + campaign.intervalMinute > counter ? true : false;
-                                    await QueryBuilder.updateRecord('campaign', campaign.id, {
-                                        totalCount: counter,
-                                        lastIndex: isCallCompleted ? 0 : campaign.lastIndex + campaign.intervalMinute,
-                                        isCalling: false,
-                                        campaignStatus: !isCallCompleted,
-                                    })
+                                const client = await faktory.connect();
+                                var i, j, temporary, chunk = Constants.BatchSize;
+                                for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
+                                    temporary = verizonCarriers.slice(i, i + chunk);
+                                    await client.job("OriginateCallJob", temporary).push();
+                                }
 
-                                }).catch(exception => {
-                                    console.error(exception);
-                                })
+                                await client.close();
+
+
+
+
+                                // await Promise.all([
+                                //     axios.post(Constants.AsteriskUrl, _verizonRequest),
+                                //     axios.post(Constants.AsteriskUrl, _tmobileRequest),
+                                //     axios.post(Constants.AsteriskUrl, _attRequest),
+                                // ]).then(async response => {
+                                //     const isCallCompleted = campaign.lastIndex + campaign.intervalMinute > counter ? true : false;
+                                //     await QueryBuilder.updateRecord('campaign', campaign.id, {
+                                //         totalCount: counter,
+                                //         lastIndex: isCallCompleted ? 0 : campaign.lastIndex + campaign.intervalMinute,
+                                //         isCalling: false,
+                                //         campaignStatus: !isCallCompleted,
+                                //     })
+
+                                // }).catch(exception => {
+                                //     console.error(exception);
+                                // })
                             }
                         })
                 }
