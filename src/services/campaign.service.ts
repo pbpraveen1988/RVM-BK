@@ -128,7 +128,7 @@ export class CampaignService {
         try {
             console.log("================INside TRY BLOCK============");
             const client = await faktory.connect({
-                host: 'tcp://:8ab081c0bfdc2175@3.145.3.203',
+                host: 'tcp://:8ab081c0bfdc2175@3.144.152.98',
                 port: 7419
             });
             await client.job("OriginateCallJob", { carrier: "verizon", audio_uri: "https://some.domain.com/some/path/to/file.wav", vm_numbers: [{ number: "6156678565" }, { number: "8304463687" }] }).push();
