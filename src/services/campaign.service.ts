@@ -58,13 +58,12 @@ export class CampaignService {
   @Cron(CronExpression.EVERY_MINUTE)
   async handleInQueueCSVCron() {
     console.log('handleInQueueCSVCron: CRON DATE', new Date());
-    const sql = `select id,tcpaJobKey,filename from csvfile where tcpaStatus='in_queue'`;
+    const sql = `select id,filename,tcpa_job_queue_id from csvfile where tcpa_job_queue_status='in_queue'`;
     const queueCsvList: Array<any> = await Utils.executeQuery(sql);
     queueCsvList && queueCsvList.forEach(async csvfile => {
       try {
-        const scrubFormData = new FormData();
-        scrubFormData.append('key', csvfile.key);
-        const res = await axios.post(API_TCPA_SCRUB_STATUS, scrubFormData, {
+
+        const res = await axios.post(`${API_TCPA_SCRUB_STATUS}?key=${csvfile.tcpa_job_queue_id}`, {}, {
           auth: {
             username: TCPA_USERNAME,
             password: TCPA_SECRET
@@ -78,38 +77,50 @@ export class CampaignService {
           if (data.match) {
             const item = data.match;
             for (let key in item) {
-              if (item[key].status === 'TCPA') {
-                tcpaRecords.push(key, item[key]);
+              if (item[key].status == 'TCPA') {
+                tcpaRecords.push(item[key]);
               }
-              if (item[key].status === 'DNC_COMPLAINERS') {
-                dncRecords.push(key, item[key]);
+              if (item[key].status == 'DNC_COMPLAINERS') {
+                dncRecords.push(item[key]);
               }
             }
           }
           if (data.clean) {
             const item = data.clean;
             for (let key in item) {
-              cleanRecords.push(key, item[key].phone_number);
+              cleanRecords.push(item[key]);
             }
+            // print CSV string
+            console.log(csv);
 
+            console.log('*****cleanRecords')
+            console.log(cleanRecords);
             // convert JSON array to CSV string
-            converter.json2csv(cleanRecords, async (err, csv) => {
+            converter.json2csv(cleanRecords, async (err, csvRecord) => {
               if (err) {
                 throw err;
               }
               // print CSV string
-              console.log(csv);
+              console.log('*****csvRecord')
+              console.log(csvRecord);
 
               // write CSV to a file
-              fs.writeFileSync('src/public/' + csvfile.filename, csv);
+              const fileName = `${path.parse(csvfile.filename).name}_clean.csv`;
+              fs.writeFileSync(`src/public/${fileName}`, csvRecord);
 
               await QueryBuilder.updateRecord('csvfile', csvfile.id, {
-                status: 'active'
+                filename: fileName,
+                tcpa_job_queue_status: 'completed',
+                status: 'active',
+                totalTcpaCount: tcpaRecords.length,
+                totalDncCount: dncRecords.length,
+                totalCleanCount: cleanRecords.length
               })
 
             });
           }
         }
+
       } catch (ex) {
         console.error('handleInQueueCSVCron:Exception => ', ex.message);
       }
@@ -127,8 +138,8 @@ export class CampaignService {
     const campaignList: Array<any> = await Utils.executeQuery(queryString);
     try {
       console.log("================INside TRY BLOCK============");
-      const client =  await faktory.connect({url: "tcp://:8ab081c0bfdc2175@3.144.152.98:7419"});
-      
+      const client = await faktory.connect({ url: "tcp://:8ab081c0bfdc2175@3.144.152.98:7419" });
+
       // await faktory.connect({
       //   //host: 'tcp://:8ab081c0bfdc2175@3.144.152.98',
       //   host: '3.144.152.98',
