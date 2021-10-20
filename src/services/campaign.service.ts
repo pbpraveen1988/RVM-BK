@@ -169,55 +169,65 @@ export class CampaignService {
             })
             .on('end', async () => {
               if (numbers.length) {
-                await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: true })
+                await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: 1 })
                 const _numberWithCarriers: Record[] = [];
                 for (const number of numbers) {
                   const _carrier: string = await Utils.getCarrier(number) as string;
                   _numberWithCarriers.push({
                     carrier: _carrier,
-                    number: number
+                    number: number.PhoneTo
                   })
                 }
                 const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => { return { number: y.number } });
                 const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => { return { number: y.number } });
                 const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => { return { number: y.number } });
-                // Create DROP request for VERIZON carrier 
-                const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
-                // Create DROP request for T-MOBILE carrier
-                const _tmobileRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'T-MOBILE');
-                // Create DROP request for CINGULAR carrier
-                const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
+                // // Create DROP request for VERIZON carrier 
+                // const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
+                // // Create DROP request for T-MOBILE carrier
+                // const _tmobileRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'T-MOBILE');
+                // // Create DROP request for CINGULAR carrier
+                // const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
 
                 const client = await faktory.connect({ url: Constants.FaktoryUrl });
 
-                var i, j, temporary, chunk = Constants.BatchSize;
-                for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
-                  temporary = verizonCarriers.slice(i, i + chunk);
-                  console.log("LOOP", chunk, i + chunk, j, temporary.length);
-                  await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'VERIZON')).push();
+                try {
+                  // VERIZON CARRIER
+                  var i, j, temporary, chunk = Constants.BatchSize;
+                  for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
+                    temporary = verizonCarriers.slice(i, i + chunk);
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'VERIZON')).push();
+                    console.log('JOB ID', jobid);
+                  }
+                } catch (ex) {
+
+                }
+
+                try {
+                  // T-MOBILE
+                  var i, j, temporary, chunk = Constants.BatchSize;
+                  for (i = 0, j = tmobileCarriers.length; i < j; i += Constants.BatchSize) {
+                    temporary = tmobileCarriers.slice(i, i + chunk);
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'T-MOBILE')).push();
+                    console.log('JOB ID', jobid);
+                  }
+                } catch (ex) {
+
+                }
+
+                try {
+                  // CINGULAR
+                  var i, j, temporary, chunk = Constants.BatchSize;
+                  for (i = 0, j = attCarriers.length; i < j; i += Constants.BatchSize) {
+                    temporary = attCarriers.slice(i, i + chunk);
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'CINGULAR')).push();
+                    console.log('JOB ID', jobid);
+                  }
+                } catch (ex) {
+
                 }
 
                 await client.close();
 
-
-
-
-                // await Promise.all([
-                //     axios.post(Constants.AsteriskUrl, _verizonRequest),
-                //     axios.post(Constants.AsteriskUrl, _tmobileRequest),
-                //     axios.post(Constants.AsteriskUrl, _attRequest),
-                // ]).then(async response => {
-                //     const isCallCompleted = campaign.lastIndex + campaign.intervalMinute > counter ? true : false;
-                //     await QueryBuilder.updateRecord('campaign', campaign.id, {
-                //         totalCount: counter,
-                //         lastIndex: isCallCompleted ? 0 : campaign.lastIndex + campaign.intervalMinute,
-                //         isCalling: false,
-                //         campaignStatus: !isCallCompleted,
-                //     })
-
-                // }).catch(exception => {
-                //     console.error(exception);
-                // })
               }
             })
         }

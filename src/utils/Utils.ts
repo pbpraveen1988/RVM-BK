@@ -4,7 +4,7 @@ import { Constants } from './constants';
 import { Record } from "../model";
 
 export const API_TCPA_SCRUB_BULK = 'https://api.tcpalitigatorlist.com/scrub/phones';
-export const  API_TCPA_SCRUB_STATUS = 'https://api.tcpalitigatorlist.com/scrub/phones/get';
+export const API_TCPA_SCRUB_STATUS = 'https://api.tcpalitigatorlist.com/scrub/phones/get';
 export const TCPA_USERNAME = 'tcpa_BKjMrl8NgZ';
 export const TCPA_SECRET = 'AK6g aNnK ivXC nqAn aAhl TFvv';
 
@@ -63,22 +63,22 @@ export class Utils {
 
     public static makeRequestForAsterisk(campaign: Record, numbersArray: Record[], carrier: string, lines?: { xref: string, phone: string }) {
         const _record: Record = new Record();
-        _record["vm numbers"] = numbersArray;
-        _record["mobile carrier"] = carrier;
-        _record["telco carrier"] = "telnyx";
-        _record["audio uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
+        _record["vm_numbers"] = numbersArray;
+        _record["mobile_carrier"] = carrier;
+        _record["telco_carrier"] = "telnyx";
+        _record["audio_uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
+        _record["callback_url"] = Constants.CallBackUrl;
         if (lines) {
-            _record["mailbox number"] = lines.phone;
-            _record["gateway access number"] = lines.xref;
-            _record["telco caller id"] = lines.phone;
+            _record["mailbox_number"] = lines.phone;
+            _record["gateway_access_number"] = lines.xref;
+            _record["telco_caller_id"] = lines.phone;
             switch (carrier) {
                 case 'VERIZON':
-                    _record["mailbox password"] = "7079"; break;
+                    _record["mailbox_password"] = "7079"; break;
                 case 'T-MOBILE':
-                    _record["mailbox password"] = "7079"; break;
+                    _record["mailbox_password"] = "7079"; break;
                 case 'CINGULAR':
-
-                    _record["mailbox password"] = "7079"; break;
+                    _record["mailbox_password"] = "7079"; break;
             }
         }
         return _record;
