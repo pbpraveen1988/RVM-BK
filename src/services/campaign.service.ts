@@ -178,9 +178,9 @@ export class CampaignService {
                     number: number.PhoneTo
                   })
                 }
-                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'VERIZON').map(y => { return { number: y.number } });
-                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'T-MOBILE').map(y => { return { number: y.number } });
-                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'CINGULAR').map(y => { return { number: y.number } });
+                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'verizon').map(y => { return { number: y.number } });
+                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'tmobile').map(y => { return { number: y.number } });
+                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'att').map(y => { return { number: y.number } });
                 // // Create DROP request for VERIZON carrier 
                 // const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
                 // // Create DROP request for T-MOBILE carrier
@@ -195,7 +195,7 @@ export class CampaignService {
                   var i, j, temporary, chunk = Constants.BatchSize;
                   for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                     temporary = verizonCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'VERIZON')).push();
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
                     console.log('JOB ID', jobid);
                   }
                 } catch (ex) {
@@ -207,7 +207,7 @@ export class CampaignService {
                   var i, j, temporary, chunk = Constants.BatchSize;
                   for (i = 0, j = tmobileCarriers.length; i < j; i += Constants.BatchSize) {
                     temporary = tmobileCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'T-MOBILE')).push();
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'tmobile')).push();
                     console.log('JOB ID', jobid);
                   }
                 } catch (ex) {
@@ -219,7 +219,7 @@ export class CampaignService {
                   var i, j, temporary, chunk = Constants.BatchSize;
                   for (i = 0, j = attCarriers.length; i < j; i += Constants.BatchSize) {
                     temporary = attCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'CINGULAR')).push();
+                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'att')).push();
                     console.log('JOB ID', jobid);
                   }
                 } catch (ex) {

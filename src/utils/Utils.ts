@@ -46,7 +46,7 @@ export class Utils {
      */
     // NOTE :  Later we will make api call or DB call to get the carrier
     public static async getCarrier(phone_number: string | number) {
-        return new Promise((resolve, reject) => resolve('VERIZON'));
+        return new Promise((resolve, reject) => resolve('verizon'));
     }
 
     public static async getLines(carrier?: string) {
@@ -64,7 +64,7 @@ export class Utils {
     public static makeRequestForAsterisk(campaign: Record, numbersArray: Record[], carrier: string, lines?: { xref: string, phone: string }) {
         const _record: Record = new Record();
         _record["vm_numbers"] = numbersArray;
-        _record["mobile_carrier"] = carrier;
+        _record["carrier"] = carrier;
         _record["telco_carrier"] = "telnyx";
         _record["audio_uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
         _record["callback_url"] = Constants.CallBackUrl;
