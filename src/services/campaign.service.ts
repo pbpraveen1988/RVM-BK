@@ -136,22 +136,24 @@ export class CampaignService {
         INNER JOIN audio a ON a.id = c.audio_id
         WHERE c.status = 1 AND c.isCalling = 0`;
     const campaignList: Array<any> = await Utils.executeQuery(queryString);
-    try {
-      console.log("================INside TRY BLOCK============");
-      const client = await faktory.connect({ url: "tcp://:8ab081c0bfdc2175@3.144.152.98:7419" });
-
-      // await faktory.connect({
-      //   //host: 'tcp://:8ab081c0bfdc2175@3.144.152.98',
-      //   host: '3.144.152.98',
-      //   port: 7419
-      // });
-      await client.job("OriginateCallJob", { carrier: "verizon", audio_uri: "https://some.domain.com/some/path/to/file.wav", vm_numbers: [{ number: "6156678565" }, { number: "8304463687" }] }).push();
-      await client.close(); // reuse client if possible! remember to disconnect!
-      console.log("==========INSIDE BLOCK COMPLETED==============");
-    } catch (ex) {
-      console.log("INSIDE EXCEPTION");
-      console.error(ex);
-    }
+    // try {
+    //   console.log("================INside TRY BLOCK============");
+    //   const client = await faktory.connect({ url: "tcp://:8ab081c0bfdc2175@3.144.152.98:7419" });
+    //   console.log("CLIENT CONNECTION", client);
+    //   // await faktory.connect({
+    //   //   //host: 'tcp://:8ab081c0bfdc2175@3.144.152.98',
+    //   //   host: '3.144.152.98',
+    //   //   port: 7419
+    //   // });
+    //   await client.job("OriginateCallJob", { carrier: "verizon", audio_uri: "https://some.domain.com/some/path/to/file.wav", vm_numbers: [{ number: "6156678565" }, { number: "8304463687" }] }).push();
+    //   await client.close(); // reuse client if possible! remember to disconnect!
+    //   console.log("==========INSIDE BLOCK COMPLETED==============");
+    // } catch (ex) {
+    //   console.log("INSIDE EXCEPTION");
+    //   console.error(ex);
+    //   const client1 = await faktory.connect({ url: "3.144.152.98:7419" });
+    //   console.log(client1);
+    // }
 
     campaignList && campaignList.forEach(campaign => {
       try {
@@ -186,11 +188,13 @@ export class CampaignService {
                 // Create DROP request for CINGULAR carrier
                 const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
 
-                const client = await faktory.connect();
+                const client = await faktory.connect({ url: Constants.FaktoryUrl });
+
                 var i, j, temporary, chunk = Constants.BatchSize;
                 for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                   temporary = verizonCarriers.slice(i, i + chunk);
-                  await client.job("OriginateCallJob", temporary).push();
+                  console.log("LOOP", chunk, i + chunk, j, temporary.length);
+                  await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'VERIZON')).push();
                 }
 
                 await client.close();
