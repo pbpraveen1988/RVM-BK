@@ -9,7 +9,6 @@ const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
 const faktory = require("faktory-worker");
-const got = require('got');
 const converter = require('json-2-csv');
 
 @Injectable()
