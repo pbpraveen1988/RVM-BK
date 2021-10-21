@@ -30,12 +30,16 @@ export class AttachmentController {
 
     @Post('mass/scrub/phones')
     async scrubPhones(@Body() request: Record): Promise<any> {
-      const apiUrl = `${API_TCPA_SCRUB_BULK}?phones=[${request.phones}]&type=[${request.type}]`;
+      const requestParams = `phones=[${request.phones}]&type=[${request.type}]`;
+      const apiUrl = `${API_TCPA_SCRUB_BULK}`;
       console.log(apiUrl);
-      const res = await axios.post(apiUrl, {}, {
+      const res = await axios.post(apiUrl, requestParams, {
         auth: {
           username: TCPA_USERNAME,
           password: TCPA_SECRET
+        },
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
       })
 
