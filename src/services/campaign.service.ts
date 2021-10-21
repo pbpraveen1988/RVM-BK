@@ -94,7 +94,7 @@ export class CampaignService {
             console.log(csv);
 
             console.log('*****cleanRecords')
-            console.log(cleanRecords);
+            //console.log(cleanRecords);
             // convert JSON array to CSV string
             converter.json2csv(cleanRecords, async (err, csvRecord) => {
               if (err) {
@@ -102,7 +102,7 @@ export class CampaignService {
               }
               // print CSV string
               console.log('*****csvRecord')
-              console.log(csvRecord);
+              //console.log(csvRecord);
 
               // write CSV to a file
               const fileName = `${path.parse(csvfile.filename).name}_clean.csv`;
