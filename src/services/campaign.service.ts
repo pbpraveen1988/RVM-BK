@@ -5,6 +5,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import axios from 'axios';
 import { Record } from '../model';
 import { Constants } from '../utils/constants';
+import * as moment from 'moment';
+import * as momentTz from 'moment-timezone';
 const csv = require('csv-parser');
 const path = require('path');
 const fs = require('fs');
@@ -111,7 +113,7 @@ export class CampaignService {
               await QueryBuilder.updateRecord('csvfile', csvfile.id, {
                 filename: fileName,
                 tcpa_job_queue_status: 'completed',
-                tcpa_response_json: JSON.stringify(data) ,
+                tcpa_response_json: JSON.stringify(data),
                 status: 'active',
                 totalTcpaCount: tcpaRecords.length,
                 totalDncCount: dncRecords.length,
@@ -131,7 +133,7 @@ export class CampaignService {
   @Cron('* * * * *')
   async handleCampaignCron() {
     console.log('handleCampaignCron: CRON DATE', new Date());
-    const queryString = `SELECT c.id,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename
+    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename
         FROM campaign c
         INNER JOIN csvfile csv ON c.csvfile_id = csv.id
         INNER JOIN audio a ON a.id = c.audio_id
@@ -157,8 +159,15 @@ export class CampaignService {
     // }
 
     campaignList && campaignList.forEach(campaign => {
+      console.log("MOMENT TIME DIFF IN MIN => ", moment.utc().diff(momentTz.tz(campaign.start_date, campaign.timeZone).utc(), "minutes"));
+      let runCampaign = false;
+      if (campaign.start_date === "0000-00-00 00:00:00") {
+        runCampaign = true;
+      } else if (moment.utc().diff(momentTz.tz(campaign.start_date, campaign.timeZone).utc(), "minutes") >= 0) {
+        runCampaign = true;
+      }
       try {
-        if (new Date(campaign.start_date) <= new Date() || new Date(campaign.end_date) <= new Date()) {
+        if (runCampaign) {
           let counter = 0;
           let numbers = [];
           fs.createReadStream('src/public/' + campaign.filename)
@@ -170,65 +179,97 @@ export class CampaignService {
             })
             .on('end', async () => {
               if (numbers.length) {
-                await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: 1 })
-                const _numberWithCarriers: Record[] = [];
-                for (const number of numbers) {
-                  const _carrier: string = await Utils.getCarrier(number) as string;
-                  _numberWithCarriers.push({
-                    carrier: _carrier,
-                    number: number.PhoneTo
-                  })
-                }
-                const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'verizon').map(y => { return { number: y.number } });
-                const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'tmobile').map(y => { return { number: y.number } });
-                const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'att').map(y => { return { number: y.number } });
-                // // Create DROP request for VERIZON carrier 
-                // const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
-                // // Create DROP request for T-MOBILE carrier
-                // const _tmobileRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'T-MOBILE');
-                // // Create DROP request for CINGULAR carrier
-                // const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
-
-                const client = await faktory.connect({ url: Constants.FaktoryUrl });
-
                 try {
-                  // VERIZON CARRIER
-                  var i, j, temporary, chunk = Constants.BatchSize;
-                  for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
-                    temporary = verizonCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
-                    console.log('JOB ID', jobid);
+                  await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: 1 });
+                  const _numberWithCarriers: Record[] = [];
+                  const jobQueueNumber: Record[] = []
+                  for (const number of numbers) {
+                    const _carrier: string = await Utils.getCarrier(number) as string;
+                    _numberWithCarriers.push({
+                      carrier: _carrier,
+                      number: number.PhoneTo
+                    })
                   }
-                } catch (ex) {
+                  const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'verizon').map(y => { return { number: y.number } });
+                  const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'tmobile').map(y => { return { number: y.number } });
+                  const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'att').map(y => { return { number: y.number } });
+                  // // Create DROP request for VERIZON carrier 
+                  // const _verizonRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'VERIZON');
+                  // // Create DROP request for T-MOBILE carrier
+                  // const _tmobileRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'T-MOBILE');
+                  // // Create DROP request for CINGULAR carrier
+                  // const _attRequest = Utils.makeRequestForAsterisk(campaign, verizonCarriers, 'CINGULAR');
 
-                }
+                  const client = await faktory.connect({ url: Constants.FaktoryUrl });
 
-                try {
-                  // T-MOBILE
-                  var i, j, temporary, chunk = Constants.BatchSize;
-                  for (i = 0, j = tmobileCarriers.length; i < j; i += Constants.BatchSize) {
-                    temporary = tmobileCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'tmobile')).push();
-                    console.log('JOB ID', jobid);
+                  try {
+                    // VERIZON CARRIER
+                    var i, j, temporary, chunk = Constants.BatchSize;
+                    for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
+                      temporary = verizonCarriers.slice(i, i + chunk);
+                      const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
+                      console.log('JOB ID', jobid);
+                      jobQueueNumber.push({
+                        job_id: jobid,
+                        numbers: temporary.map(x => x.number).join(','),
+                        campaign_id: campaign.id,
+                        status: "sent",
+                        numberCount: temporary.length
+                      })
+                    }
+                  } catch (ex) {
+
                   }
-                } catch (ex) {
 
-                }
+                  try {
+                    // T-MOBILE
+                    var i, j, temporary, chunk = Constants.BatchSize;
+                    for (i = 0, j = tmobileCarriers.length; i < j; i += Constants.BatchSize) {
+                      temporary = tmobileCarriers.slice(i, i + chunk);
+                      const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'tmobile')).push();
+                      console.log('JOB ID', jobid);
+                      jobQueueNumber.push({
+                        job_id: jobid,
+                        numbers: temporary.map(x => x.number).join(','),
+                        campaign_id: campaign.id,
+                        status: "sent",
+                        numberCount: temporary.length
+                      })
+                    }
+                  } catch (ex) {
 
-                try {
-                  // CINGULAR
-                  var i, j, temporary, chunk = Constants.BatchSize;
-                  for (i = 0, j = attCarriers.length; i < j; i += Constants.BatchSize) {
-                    temporary = attCarriers.slice(i, i + chunk);
-                    const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'att')).push();
-                    console.log('JOB ID', jobid);
                   }
-                } catch (ex) {
 
+                  try {
+                    // CINGULAR
+                    var i, j, temporary, chunk = Constants.BatchSize;
+                    for (i = 0, j = attCarriers.length; i < j; i += Constants.BatchSize) {
+                      temporary = attCarriers.slice(i, i + chunk);
+                      const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'att')).push();
+                      console.log('JOB ID', jobid);
+                      jobQueueNumber.push({
+                        job_id: jobid,
+                        numbers: temporary.map(x => x.number).join(','),
+                        campaign_id: campaign.id,
+                        status: "sent",
+                        numberCount: temporary.length
+                      })
+                    }
+                  } catch (ex) {
+
+                  }
+                  const isCallCompleted = campaign.lastIndex + campaign.intervalMinute > counter ? true : false;
+                  await QueryBuilder.updateRecord('campaign', campaign.id, {
+                    isCalling: 0,
+                    lastIndex: campaign.lastIndex + campaign.intervalMinute,
+                    status: isCallCompleted ? 0 : 1,
+                  });
+                  await QueryBuilder.bulkInsert('job_status', jobQueueNumber);
+                  await client.close();
                 }
-
-                await client.close();
-
+                catch (ex) {
+                  await QueryBuilder.updateRecord('campaign', campaign.id, { isCalling: 0 });
+                }
               }
             })
         }
