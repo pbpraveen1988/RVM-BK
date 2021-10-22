@@ -25,7 +25,7 @@ export class DataService {
     }
 
     async deleteRecord(object: string, recordId: string) {
-        const data = await QueryBuilder.deleteRecord(object, recordId)
+        const data = await QueryBuilder.deleteRecord(object, parseInt(recordId))
         return data;
     }
 }

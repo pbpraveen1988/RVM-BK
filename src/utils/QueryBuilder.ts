@@ -19,9 +19,10 @@ export class QueryBuilder {
         }
     }
 
-    public static async deleteRecord(object: string, recordId: string) {
+    public static async deleteRecord(object: string, recordId: string | number) {
         if (object && recordId) {
-            const queryString = `DELETE from ${object} where id = '${recordId}' `;
+            const queryString = `DELETE from ${object} where id = ${recordId} `;
+            await Utils.executeQuery(queryString);
         } else {
             throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
         }
