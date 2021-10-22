@@ -108,6 +108,12 @@ export class QueryBuilder {
         if (queryParams && queryParams.where) {
             queryString += QueryBuilder.createWhereStatement(queryParams.where);
         }
+
+        if (queryParams && queryParams.order_by) {
+
+        } else {
+            queryString += ' ORDER BY updated_at DESC';
+        }
         console.log(queryString);
         return await Utils.executeQuery(queryString);
     }
