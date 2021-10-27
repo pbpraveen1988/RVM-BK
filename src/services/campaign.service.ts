@@ -19,15 +19,35 @@ export class CampaignService {
   private static Carrier: string;
 
   async getHistory(id: any) {
-    const queryString = 'SELECT STATUS,COUNT(STATUS),SUM(numberCount) FROM job_status WHERE campaign_id = ' + id + ' GROUP BY STATUS';
+    const queryString = 'SELECT STATUS,COUNT(STATUS),SUM(numberCount) AS countNumber FROM job_status WHERE campaign_id = ' + id + ' GROUP BY STATUS';
     const dataString = 'SELECT c.totalCount,c.totalCleanCount,camp.csvfile_id from campaign camp,csvfile c where c.id = camp.csvfile_id AND camp.id =' + id;
-    const campaignData = await Utils.executeQuery(dataString);
+    const campaignData: Record = await Utils.executeQuery(dataString);
     const _data: Array<any> = await Utils.executeQuery(queryString);
     if (_data && campaignData) {
-      const _successCount = _data.filter(x => x.status == 'completed').length;
-      const _failedCount = _data.filter(x => x.status == 'failed').length;
-      const _pendingCount = _data.filter(x => x.status == 'sent').length;
-      const _processingCount = _data.filter(x => x.status = 'processing').length;
+      let _successCount = 0;
+      let _failedCount = 0;
+      let _pendingCount = 0;
+      let _processingCount = 0;
+
+      if (_data.filter(x => x.status == "processed").length > 0) {
+        _successCount = _data.find(x => x.status == 'processed').countNumber;
+      }
+      if (_data.filter(x => x.status == "failed").length > 0) {
+        _failedCount = _data.find(x => x.status == 'failed').countNumber;
+      }
+      if (_data.filter(x => x.status == "dead").length > 0) {
+        _failedCount += _data.find(x => x.status == 'dead').countNumber;
+      }
+
+      if (_data.filter(x => x.status == "sent").length > 0) {
+        _pendingCount = _data.find(x => x.status == 'sent').countNumber;
+      }
+      if (_data.filter(x => x.status == "sent").length > 0) {
+        _processingCount = _data.find(x => x.status == 'sent').countNumber;
+      }
+
+      _pendingCount = campaignData.totalCount - (_successCount + _processingCount + _failedCount)
+
       return {
         success: _successCount,
         pending: _pendingCount,
