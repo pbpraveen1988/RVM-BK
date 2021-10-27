@@ -167,7 +167,7 @@ export class CampaignService {
       if (_responsebody && _responsebody.data) {
         for (const jobid in _responsebody.data) {
           if (_responsebody.data[jobid] != "unknown") {
-            await Utils.executeQuery(`UPDATE job_status SET status = "${_responsebody.data[jobid]}" where job_id = ${jobid}`);
+            await Utils.executeQuery(`UPDATE job_status SET status = "${_responsebody.data[jobid]}" where job_id = "${jobid}"`);
           }
         }
         this.checkLimit += 50;
