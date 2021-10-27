@@ -238,7 +238,7 @@ export class CampaignService {
                     const _carrier: string = await Utils.getCarrier(number) as string;
                     _numberWithCarriers.push({
                       carrier: _carrier,
-                      number: number.PhoneTo
+                      number: number.phone_number
                     })
                     console.log("number carrier", number, _carrier);
                   }
