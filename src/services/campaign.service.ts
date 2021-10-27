@@ -39,14 +39,14 @@ export class CampaignService {
         _failedCount += _data.find(x => x.status == 'dead').countNumber;
       }
 
-      if (_data.filter(x => x.status == "sent").length > 0) {
-        _pendingCount = _data.find(x => x.status == 'sent').countNumber;
-      }
+      // if (_data.filter(x => x.status == "sent").length > 0) {
+      //   _pendingCount = _data.find(x => x.status == 'sent').countNumber;
+      // }
       if (_data.filter(x => x.status == "sent").length > 0) {
         _processingCount = _data.find(x => x.status == 'sent').countNumber;
       }
 
-      _pendingCount = campaignData.totalCount - (_successCount + _processingCount + _failedCount)
+      _pendingCount = campaignData.totalCleanCount - (_successCount + _processingCount + _failedCount)
 
       return {
         success: _successCount,
