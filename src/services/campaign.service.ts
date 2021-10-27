@@ -240,7 +240,9 @@ export class CampaignService {
                       carrier: _carrier,
                       number: number.PhoneTo
                     })
+                    console.log("number carrier", number, _carrier);
                   }
+                  console.log("_numberwithcarries length", _numberWithCarriers.length);
                   console.log("_numberWithCarriers", _numberWithCarriers);
                   const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'verizon').map(y => { return { number: y.number } });
                   console.log("verizonCarriers", verizonCarriers)
