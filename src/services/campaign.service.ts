@@ -258,6 +258,7 @@ export class CampaignService {
                     var i, j, temporary, chunk = Constants.BatchSize;
                     for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                       temporary = verizonCarriers.slice(i, i + chunk);
+                      console.log("temporary jobs", JSON.stringify(temporary));
                       const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
                       console.log('JOB ID', jobid);
                       jobQueueNumber.push({
