@@ -6,7 +6,7 @@
   "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
-    "copy-public": "cp -rv src/public/i18n dist/public/",
+    "copy-public": "cp -rv src/public/ dist/public/",
     "build": "nest build && npm run copy-public",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
