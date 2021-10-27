@@ -12,7 +12,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     DatabaseModule,
     ServeStaticModule.forRoot({
-      rootPath: '/src/public',
+      rootPath: '/dist/public',
     })
   ],
   controllers: [AppController, DataController, UserController, AttachmentController, CampaignController],
