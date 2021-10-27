@@ -46,7 +46,7 @@ export class CampaignService {
         _processingCount = _data.find(x => x.status == 'sent').countNumber;
       }
 
-      _pendingCount = campaignData.totalCleanCount - (_successCount + _processingCount + _failedCount)
+      _pendingCount = campaignData[0].totalCleanCount - (_successCount + _processingCount + _failedCount)
 
       return {
         success: _successCount,
