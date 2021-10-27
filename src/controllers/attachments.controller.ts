@@ -15,7 +15,7 @@ export class AttachmentController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: 'public'
+      destination: 'dist/public'
       , filename: (req, file, cb) => {
         // Generating a 32 random chars long string
         const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('')
@@ -51,10 +51,10 @@ export class AttachmentController {
   getFile(@Param() params): StreamableFile {
     try {
       console.log(params.fileId);
-      const file = createReadStream('public/' + params.fileId);
+      const file = createReadStream('dist/public/' + params.fileId);
       return new StreamableFile(file);
     } catch (ex) {
-      console.error(ex);
+      console.error("error while downloading the file", ex);
     }
   }
 

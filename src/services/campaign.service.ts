@@ -132,18 +132,22 @@ export class CampaignService {
               //console.log(csvRecord);
 
               // write CSV to a file
-              const fileName = `${path.parse(csvfile.filename).name}_clean.csv`;
-              fs.writeFileSync(`/public/${fileName}`, csvRecord);
 
-              await QueryBuilder.updateRecord('csvfile', csvfile.id, {
-                filename: fileName,
-                tcpa_job_queue_status: 'completed',
-                tcpa_response_json: JSON.stringify(data),
-                status: 'active',
-                totalTcpaCount: tcpaRecords.length,
-                totalDncCount: dncRecords.length,
-                totalCleanCount: cleanRecords.length
-              })
+              try {
+                const fileName = `${path.parse(csvfile.filename).name}_clean.csv`;
+                fs.writeFileSync(`dist/public/${fileName}`, csvRecord);
+                await QueryBuilder.updateRecord('csvfile', csvfile.id, {
+                  filename: fileName,
+                  tcpa_job_queue_status: 'completed',
+                  tcpa_response_json: JSON.stringify(data),
+                  status: 'active',
+                  totalTcpaCount: tcpaRecords.length,
+                  totalDncCount: dncRecords.length,
+                  totalCleanCount: cleanRecords.length
+                })
+              } catch (ex) {
+                console.error(ex);
+              }
 
             });
           }
@@ -217,7 +221,7 @@ export class CampaignService {
         if (runCampaign) {
           let counter = 0;
           let numbers = [];
-          fs.createReadStream('/public/' + campaign.filename)
+          fs.createReadStream('dist/public/' + campaign.filename)
             .pipe(csv())
             .on('data', data => {
               if (counter++ >= campaign.lastIndex && counter <= campaign.lastIndex + campaign.intervalMinute) {
