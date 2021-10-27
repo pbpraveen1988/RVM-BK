@@ -19,14 +19,15 @@ export class CampaignService {
   private static Carrier: string;
 
   async getHistory(id: any) {
-    const queryString = 'Select * from callhistory where campaignId = ' + id;
-    const campaignData = await QueryBuilder.getRecord('campaign', id);
+    const queryString = 'SELECT STATUS,COUNT(STATUS),SUM(numberCount) FROM job_status WHERE campaign_id = ' + id + ' GROUP BY STATUS';
+    const dataString = 'SELECT c.totalCount,c.totalCleanCount,camp.csvfile_id from campaign camp,csvfile c where c.id = camp.csvfile_id AND camp.id =' + id;
+    const campaignData = await Utils.executeQuery(dataString);
     const _data: Array<any> = await Utils.executeQuery(queryString);
     if (_data && campaignData) {
-      const _successCount = _data.filter(x => x.status == 'Success').length;
-      const _failedCount = _data.filter(x => x.status == 'Failed').length;
-      const _pendingCount = _data.filter(x => x.status == 'Pending').length;
-      const _processingCount = campaignData.total - (_successCount + _pendingCount + _failedCount);
+      const _successCount = _data.filter(x => x.status == 'completed').length;
+      const _failedCount = _data.filter(x => x.status == 'failed').length;
+      const _pendingCount = _data.filter(x => x.status == 'sent').length;
+      const _processingCount = _data.filter(x => x.status = 'processing').length;
       return {
         success: _successCount,
         pending: _pendingCount,
@@ -128,6 +129,28 @@ export class CampaignService {
         console.error('handleInQueueCSVCron:Exception => ', ex.message);
       }
     });
+  }
+
+  private checkLimit = 0;
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async handleToUpdateJobStatus() {
+    const queryString = `SELECT job_id FROM job_status where status = 'sent' LIMIT ${this.checkLimit}, 50`;
+    const jobsList: Array<any> = await Utils.executeQuery(queryString);
+    if (jobsList && jobsList.length) {
+      const url = 'http://nmgr.reachoutinc.net:3000/api/bulk_job_status';
+      const postBody = jobsList.map(x => x.job_id);
+      const _responsebody = await axios.post(url, { job_ids: postBody }).catch(ex => console.error(ex));
+      if (_responsebody && _responsebody.data) {
+        for (const jobid in _responsebody.data) {
+          if (_responsebody.data[jobid] != "unknown") {
+            await Utils.executeQuery(`UPDATE job_status SET status = ${_responsebody[jobid]} where job_id = ${jobid}`);
+          }
+        }
+        this.checkLimit += 50;
+      }
+    } else {
+      this.checkLimit = 0;
+    }
   }
 
   @Cron('* * * * *')
