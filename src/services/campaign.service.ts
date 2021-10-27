@@ -23,37 +23,41 @@ export class CampaignService {
     const dataString = 'SELECT c.totalCount,c.totalCleanCount,camp.csvfile_id from campaign camp,csvfile c where c.id = camp.csvfile_id AND camp.id =' + id;
     const campaignData: Record = await Utils.executeQuery(dataString);
     const _data: Array<any> = await Utils.executeQuery(queryString);
-    if (_data && campaignData) {
-      let _successCount = 0;
-      let _failedCount = 0;
-      let _pendingCount = 0;
-      let _processingCount = 0;
+    try {
+      if (_data && campaignData) {
+        let _successCount = 0;
+        let _failedCount = 0;
+        let _pendingCount = 0;
+        let _processingCount = 0;
 
-      if (_data.filter(x => x.status == "processed").length > 0) {
-        _successCount = _data.find(x => x.status == 'processed').countNumber;
-      }
-      if (_data.filter(x => x.status == "failed").length > 0) {
-        _failedCount = _data.find(x => x.status == 'failed').countNumber;
-      }
-      if (_data.filter(x => x.status == "dead").length > 0) {
-        _failedCount += _data.find(x => x.status == 'dead').countNumber;
-      }
+        if (_data.filter(x => x.STATUS == "processed").length > 0) {
+          _successCount = _data.find(x => x.STATUS == 'processed').countNumber;
+        }
+        if (_data.filter(x => x.STATUS == "failed").length > 0) {
+          _failedCount = _data.find(x => x.STATUS == 'failed').countNumber;
+        }
+        if (_data.filter(x => x.STATUS == "dead").length > 0) {
+          _failedCount += _data.find(x => x.STATUS == 'dead').countNumber;
+        }
 
-      // if (_data.filter(x => x.status == "sent").length > 0) {
-      //   _pendingCount = _data.find(x => x.status == 'sent').countNumber;
-      // }
-      if (_data.filter(x => x.status == "sent").length > 0) {
-        _processingCount = _data.find(x => x.status == 'sent').countNumber;
+        // if (_data.filter(x => x.status == "sent").length > 0) {
+        //   _pendingCount = _data.find(x => x.status == 'sent').countNumber;
+        // }
+        if (_data.filter(x => x.status == "sent").length > 0) {
+          _processingCount = _data.find(x => x.status == 'sent').countNumber;
+        }
+
+        _pendingCount = parseInt(campaignData[0].totalCleanCount) - (parseInt(_successCount.toString()) + parseInt(_processingCount.toString()) + parseInt(_failedCount.toString()));
+
+        return {
+          success: _successCount,
+          pending: _pendingCount,
+          processing: _processingCount,
+          failed: _failedCount
+        };
       }
-
-      _pendingCount = campaignData[0].totalCleanCount - (_successCount + _processingCount + _failedCount)
-
-      return {
-        success: _successCount,
-        pending: _pendingCount,
-        processing: _processingCount,
-        failed: _failedCount
-      };
+    } catch (ex) {
+      console.error(ex);
     }
   }
 
