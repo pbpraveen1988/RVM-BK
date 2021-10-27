@@ -241,7 +241,9 @@ export class CampaignService {
                       number: number.PhoneTo
                     })
                   }
+                  console.log("_numberWithCarriers", _numberWithCarriers);
                   const verizonCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'verizon').map(y => { return { number: y.number } });
+                  console.log("verizonCarriers", verizonCarriers)
                   const tmobileCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'tmobile').map(y => { return { number: y.number } });
                   const attCarriers: Record[] = _numberWithCarriers.filter(x => x.carrier == 'att').map(y => { return { number: y.number } });
                   // // Create DROP request for VERIZON carrier 
