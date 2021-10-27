@@ -15,7 +15,7 @@ export class AttachmentController {
     @Post('upload')
     @UseInterceptors(FileInterceptor('file', {
         storage: diskStorage({
-            destination: './src/public'
+            destination: './public'
             , filename: (req, file, cb) => {
                 // Generating a 32 random chars long string
                 const randomName = Array(32).fill(null).map(() => (Math.round(Math.random() * 16)).toString(16)).join('')
@@ -50,7 +50,7 @@ export class AttachmentController {
     @Get('download/:fileId')
     getFile(@Param() params): StreamableFile {
         console.log(params.fileId);
-        const file = createReadStream('./src/public/' + params.fileId);
+        const file = createReadStream('./public/' + params.fileId);
         return new StreamableFile(file);
     }
 

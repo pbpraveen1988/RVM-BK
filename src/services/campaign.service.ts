@@ -133,7 +133,7 @@ export class CampaignService {
 
               // write CSV to a file
               const fileName = `${path.parse(csvfile.filename).name}_clean.csv`;
-              fs.writeFileSync(`src/public/${fileName}`, csvRecord);
+              fs.writeFileSync(`/public/${fileName}`, csvRecord);
 
               await QueryBuilder.updateRecord('csvfile', csvfile.id, {
                 filename: fileName,
@@ -217,7 +217,7 @@ export class CampaignService {
         if (runCampaign) {
           let counter = 0;
           let numbers = [];
-          fs.createReadStream('src/public/' + campaign.filename)
+          fs.createReadStream('/public/' + campaign.filename)
             .pipe(csv())
             .on('data', data => {
               if (counter++ >= campaign.lastIndex && counter <= campaign.lastIndex + campaign.intervalMinute) {
