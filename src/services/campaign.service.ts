@@ -184,11 +184,7 @@ export class CampaignService {
   @Cron('* * * * *')
   async handleCampaignCron() {
     console.log('handleCampaignCron: CRON DATE', new Date());
-    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename
-        FROM campaign c
-        INNER JOIN csvfile csv ON c.csvfile_id = csv.id
-        INNER JOIN audio a ON a.id = c.audio_id
-        WHERE c.status = 1 AND c.isCalling = 0`;
+    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename FROM campaign c INNER JOIN csvfile csv ON c.csvfile_id = csv.id INNER JOIN audio a ON a.id = c.audio_id WHERE c.status = 1 AND c.isCalling = 0`;
     const campaignList: Array<any> = await Utils.executeQuery(queryString);
     // try {
     //   console.log("================INside TRY BLOCK============");
@@ -262,7 +258,7 @@ export class CampaignService {
                     var i, j, temporary, chunk = Constants.BatchSize;
                     for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                       temporary = verizonCarriers.slice(i, i + chunk);
-                      console.log("temporary jobs", JSON.stringify(temporary));
+                      console.log("temporary jobs", JSON.stringify(temporary),"verizon",i);
                       const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
                       console.log('JOB ID', jobid);
                       jobQueueNumber.push({
