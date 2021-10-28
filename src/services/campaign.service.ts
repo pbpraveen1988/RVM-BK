@@ -139,7 +139,7 @@ export class CampaignService {
                 await QueryBuilder.updateRecord('csvfile', csvfile.id, {
                   filename: fileName,
                   tcpa_job_queue_status: 'completed',
-                  tcpa_response_json: JSON.stringify(data),
+                  tcpa_response_json: JSON.stringify(data),  // need to upload file into S3
                   status: 'active',
                   totalTcpaCount: tcpaRecords.length,
                   totalDncCount: dncRecords.length,
