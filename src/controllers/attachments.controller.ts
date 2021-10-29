@@ -51,7 +51,7 @@ export class AttachmentController {
   }
 
   @Post('mass/scrub/phones')
-  async scrubPhones(request: Record): Promise<any> {
+  async scrubPhones(@Body() request: Record): Promise<any> {
     const requestParams = `phones=[${request.phones}]&type=[${request.type}]`;
     const apiUrl = `${API_TCPA_SCRUB_BULK}`;
     //console.log(apiUrl);
