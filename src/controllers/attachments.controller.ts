@@ -50,7 +50,7 @@ export class AttachmentController {
    // return { message: 'Uploaded successfully', filename: file.filename }
   }
 
-  //@Post('mass/scrub/phones')
+  @Post('mass/scrub/phones')
   async scrubPhones(request: Record): Promise<any> {
     const requestParams = `phones=[${request.phones}]&type=[${request.type}]`;
     const apiUrl = `${API_TCPA_SCRUB_BULK}`;
