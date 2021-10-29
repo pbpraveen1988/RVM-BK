@@ -67,7 +67,7 @@ export class Utils {
         _record["carrier"] = carrier;
         _record["telco_carrier"] = "telnyx";
         _record["audio_uri"] = Constants.AudioUrl + '/' + campaign.audio_filename;
-        _record["callback_url"] = Constants.CallBackUrl;
+        // _record["callback_url"] = Constants.CallBackUrl;
         if (lines) {
             _record["mailbox_number"] = lines.phone;
             _record["gateway_access_number"] = lines.xref;
