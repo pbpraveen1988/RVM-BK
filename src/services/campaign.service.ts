@@ -49,6 +49,10 @@ export class CampaignService {
 
         _pendingCount = parseInt(campaignData[0].totalCleanCount) - (parseInt(_successCount.toString()) + parseInt(_processingCount.toString()) + parseInt(_failedCount.toString()));
 
+        if (_pendingCount == undefined || _pendingCount == null) {
+          _pendingCount = 0;
+        }
+
         return {
           success: _successCount,
           pending: _pendingCount,
@@ -160,7 +164,7 @@ export class CampaignService {
   }
 
   private checkLimit = 0;
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_MINUTE)
   async handleToUpdateJobStatus() {
     const queryString = `SELECT job_id FROM job_status where status = 'sent' LIMIT ${this.checkLimit}, 50`;
     const jobsList: Array<any> = await Utils.executeQuery(queryString);
@@ -184,26 +188,9 @@ export class CampaignService {
   @Cron('* * * * *')
   async handleCampaignCron() {
     console.log('handleCampaignCron: CRON DATE', new Date());
-    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename FROM campaign c INNER JOIN csvfile csv ON c.csvfile_id = csv.id INNER JOIN audio a ON a.id = c.audio_id WHERE c.status = 1 AND c.isCalling = 0`;
+    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename FROM campaign c INNER JOIN csvfile csv ON c.csvfile_id = csv.id INNER JOIN audio a ON a.id = c.audio_id`;
     const campaignList: Array<any> = await Utils.executeQuery(queryString);
-    // try {
-    //   console.log("================INside TRY BLOCK============");
-    //   const client = await faktory.connect({ url: "tcp://:8ab081c0bfdc2175@3.144.152.98:7419" });
-    //   console.log("CLIENT CONNECTION", client);
-    //   // await faktory.connect({
-    //   //   //host: 'tcp://:8ab081c0bfdc2175@3.144.152.98',
-    //   //   host: '3.144.152.98',
-    //   //   port: 7419
-    //   // });
-    //   await client.job("OriginateCallJob", { carrier: "verizon", audio_uri: "https://some.domain.com/some/path/to/file.wav", vm_numbers: [{ number: "6156678565" }, { number: "8304463687" }] }).push();
-    //   await client.close(); // reuse client if possible! remember to disconnect!
-    //   console.log("==========INSIDE BLOCK COMPLETED==============");
-    // } catch (ex) {
-    //   console.log("INSIDE EXCEPTION");
-    //   console.error(ex);
-    //   const client1 = await faktory.connect({ url: "3.144.152.98:7419" });
-    //   console.log(client1);
-    // }
+
 
     campaignList && campaignList.forEach(campaign => {
       console.log("MOMENT TIME DIFF IN MIN => ", moment.utc().diff(momentTz.tz(campaign.start_date, campaign.timeZone).utc(), "minutes"));
@@ -218,6 +205,9 @@ export class CampaignService {
           let counter = 0;
           let numbers = [];
           fs.createReadStream('dist/public/' + campaign.filename)
+            .on('error', async () => {
+              console.error("FILE NOT FOUND ");
+            })
             .pipe(csv())
             .on('data', data => {
               if (counter++ >= campaign.lastIndex && counter <= campaign.lastIndex + campaign.intervalMinute) {
@@ -258,7 +248,7 @@ export class CampaignService {
                     var i, j, temporary, chunk = Constants.BatchSize;
                     for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                       temporary = verizonCarriers.slice(i, i + chunk);
-                      console.log("temporary jobs", JSON.stringify(temporary),"verizon",i);
+                      console.log("temporary jobs", JSON.stringify(temporary), "verizon", i);
                       const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
                       console.log('JOB ID', jobid);
                       jobQueueNumber.push({
