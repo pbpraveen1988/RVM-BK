@@ -26,32 +26,30 @@ export class AttachmentController {
       }
     })
   }))
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {   
-    //, @Body() request: Record)
-    // if (request.enable_scrub) {
-    //   const phones = [];
-    //   return new Promise((resolve, reject) => {
-    //     fs.createReadStream(file.path)
-    //       .pipe(csv())
-    //       .on('data', (data) => {
-    //         phones.push(data.phone_number);
-    //       }).on('end', async () => {
-    //         const params = {
-    //           phones: phones,
-    //           type: ["tcpa", "dnc"]
-    //         };
-    //         const res = await this.scrubPhones(params);
-    //         //console.log('============res', res);
-    //         resolve({ message: 'Uploaded successfully with Scrub', filename: file.filename, tcpa_res: res });
-    //       }).on('error', reject);
-    //   })
-    // }
-    return { file }
-   // return { message: 'Uploaded successfully', filename: file.filename }
+  async uploadFile(@UploadedFile() file: Express.Multer.File, @Body() request: Record) {
+    if (request.enable_scrub) {
+      const phones = [];
+      return new Promise((resolve, reject) => {
+        fs.createReadStream(file.path)
+          .pipe(csv())
+          .on('data', (data) => {
+            phones.push(data.phone_number);
+          }).on('end', async () => {
+            const params = {
+              phones: phones,
+              type: ["tcpa", "dnc"]
+            };
+            const res = await this.scrubPhones(params);
+            //console.log('============res', res);
+            resolve({ message: 'Uploaded successfully with Scrub', filename: file.filename, tcpa_res: res });
+          }).on('error', reject);
+      })
+    }
+    return { message: 'Uploaded successfully', filename: file.filename }
   }
 
-  @Post('mass/scrub/phones')
-  async scrubPhones(@Body() request: Record): Promise<any> {
+  //@Post('mass/scrub/phones')
+  async scrubPhones(request: Record): Promise<any> {
     const requestParams = `phones=[${request.phones}]&type=[${request.type}]`;
     const apiUrl = `${API_TCPA_SCRUB_BULK}`;
     //console.log(apiUrl);
