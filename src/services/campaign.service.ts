@@ -249,9 +249,9 @@ export class CampaignService {
                     for (i = 0, j = verizonCarriers.length; i < j; i += Constants.BatchSize) {
                       temporary = verizonCarriers.slice(i, i + chunk);
                       console.log("temporary jobs", JSON.stringify(temporary), "verizon", i);
-                      const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
-                      console.log('JOB ID', jobid);
                       if (jobQueueNumber.indexOf(x => x.numbers == temporary.map(x => x.number).join(',')) == -1) {
+                        const jobid = await client.job("OriginateCallJob", Utils.makeRequestForAsterisk(campaign, temporary, 'verizon')).push();
+                        console.log('JOB ID', jobid);
                         jobQueueNumber.push({
                           job_id: jobid,
                           numbers: temporary.map(x => x.number).join(','),
