@@ -188,7 +188,7 @@ export class CampaignService {
   @Cron('* * * * *')
   async handleCampaignCron() {
     console.log('handleCampaignCron: CRON DATE', new Date());
-    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename FROM campaign c INNER JOIN csvfile csv ON c.csvfile_id = csv.id INNER JOIN audio a ON a.id = c.audio_id`;
+    const queryString = `SELECT c.id,c.utctime,c.timeZone,c.start_date,c.end_date,csv.filename,csv.totalCount,c.intervalMinute,c.lastIndex, a.filename as audio_filename FROM campaign c INNER JOIN csvfile csv ON c.csvfile_id = csv.id INNER JOIN audio a ON a.id = c.audio_id WHERE isCalling = 0 AND status = 1`;
     const campaignList: Array<any> = await Utils.executeQuery(queryString);
 
 
