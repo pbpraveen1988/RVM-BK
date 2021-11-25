@@ -47,7 +47,7 @@ export class Utils {
     // NOTE :  Later we will make api call or DB call to get the carrier
     public static async getCarrier(phone_number: string | number) {
         const _number = Math.floor(Math.random() * 10)
-        if (_number % 2) {
+        if (_number % 2 == 0) {
             return new Promise((resolve, reject) => resolve('tmobile'));
         }
         return new Promise((resolve, reject) => resolve('verizon'));
